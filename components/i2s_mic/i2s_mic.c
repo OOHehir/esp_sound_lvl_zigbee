@@ -67,16 +67,32 @@ esp_err_t i2s_mic_read_level(float *out_level)
 
     uint32_t n = bytes_read / sizeof(int32_t);
 
-    /* Compute RMS over the window */
+    /* First pass: compute mean to remove DC offset (SPH0645 has significant DC bias) */
+    double sum = 0.0;
+    for (uint32_t i = 0; i < n; i++) {
+        sum += (double)(s_buf[i] >> SPH0645_SHIFT);
+    }
+    double mean = sum / n;
+
+    /* Second pass: compute RMS of AC component */
     double sum_sq = 0.0;
     for (uint32_t i = 0; i < n; i++) {
-        int32_t sample = s_buf[i] >> SPH0645_SHIFT;  /* 24-bit signed */
-        sum_sq += (double)sample * sample;
+        double sample = (double)(s_buf[i] >> SPH0645_SHIFT) - mean;
+        sum_sq += sample * sample;
     }
     double rms = sqrt(sum_sq / n);
 
-    /* Normalise: SPH0645 24-bit, so max positive = 2^23 - 1 */
-    *out_level = (float)(rms / ((double)(1 << 23)));
+    /* Convert to dBFS: 20*log10(rms / full_scale) */
+    double full_scale = (double)(1 << 23);
+    float linear = (float)(rms / full_scale);
+    float dbfs = -100.0f;
+    if (rms > 0.0) {
+        dbfs = 20.0f * log10f(linear);
+    }
+
+    ESP_LOGI(TAG, "mean=%.0f rms=%.1f linear=%.6f dBFS=%.1f", mean, rms, linear, dbfs);
+
+    *out_level = linear;
     if (*out_level > 1.0f) *out_level = 1.0f;
 
     return ESP_OK;
