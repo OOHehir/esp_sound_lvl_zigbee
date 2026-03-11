@@ -51,7 +51,7 @@ stty -F /dev/ttyACM0 115200 raw -echo; timeout 30 cat /dev/ttyACM0
 - **Profile:** Home Automation (`0x0104`)
 - **Cluster:** Analog Input (`0x000C`), server role
 - **Attribute:** `present_value` (`0x0055`) — single-precision float, 0.0-1.0
-- **Report interval:** 1 second (configurable via `REPORT_INTERVAL_S` in `main.c`)
+- **Report interval:** 5 seconds (configurable via `REPORT_INTERVAL_S` in `main.c`)
 
 ## Signal Processing
 

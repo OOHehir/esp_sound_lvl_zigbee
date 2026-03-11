@@ -14,7 +14,7 @@ static const char *TAG = "main";
 #define MIC_SAMPLE_RATE  16000
 #define MIC_SAMPLE_COUNT 1024
 
-#define REPORT_INTERVAL_S 1
+#define REPORT_INTERVAL_S 5
 
 /* ── Sound sampling task ─────────────────────────────────────── */
 static void sound_task(void *arg)
