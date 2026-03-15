@@ -8,7 +8,7 @@
 static const char *TAG = "main";
 
 /* ── Hardware config ─────────────────────────────────────────── */
-#define MIC_GPIO_BCLK    0
+#define MIC_GPIO_BCLK    3
 #define MIC_GPIO_WS      1
 #define MIC_GPIO_DIN     2
 #define MIC_SAMPLE_RATE  16000

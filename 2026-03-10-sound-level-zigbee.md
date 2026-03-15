@@ -27,10 +27,10 @@ Read SPH0645LM4H sound level via I2S on ESP32-C6 and report normalised RMS ampli
 |---------|----------|------------|
 | VDD     | 3.3V     | —          |
 | GND     | GND      | —          |
-| BCLK    | GPIO 0   | I2S_BCK    |
-| LRCL    | GPIO 1   | I2S_WS     |
-| DOUT    | GPIO 2   | I2S_DIN    |
-| SEL     | GND      | Left chan  |
+| SCK     | GPIO 3   | I2S_BCK    |
+| LR      | GPIO 1   | I2S_WS     |
+| SD      | GPIO 2   | I2S_DIN    |
+| LR      | GND      | Left chan  |
 
 ## Build & Flash
 
