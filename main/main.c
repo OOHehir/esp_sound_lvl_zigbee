@@ -14,18 +14,25 @@ static const char *TAG = "main";
 #define MIC_SAMPLE_RATE  16000
 #define MIC_SAMPLE_COUNT 1024
 
-#define REPORT_INTERVAL_S 5
+#define SAMPLE_INTERVAL_S  1
+#define CHANGE_THRESHOLD   0.02f
 
 /* ── Sound sampling task ─────────────────────────────────────── */
 static void sound_task(void *arg)
 {
     float level = 0.0f;
+    float prev_level = -1.0f;
     while (1) {
         if (i2s_mic_read_level(&level) == ESP_OK) {
-            ESP_LOGI(TAG, "Sound level: %.4f", level);
-            zigbee_sensor_set_level(level);
+            float delta = level - prev_level;
+            if (delta < 0) delta = -delta;
+            if (delta >= CHANGE_THRESHOLD) {
+                ESP_LOGI(TAG, "Sound level: %.4f (delta=%.4f)", level, delta);
+                zigbee_sensor_set_level(level);
+                prev_level = level;
+            }
         }
-        vTaskDelay(pdMS_TO_TICKS(REPORT_INTERVAL_S * 1000));
+        vTaskDelay(pdMS_TO_TICKS(SAMPLE_INTERVAL_S * 1000));
     }
 }
 
