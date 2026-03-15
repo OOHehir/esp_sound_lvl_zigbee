@@ -67,11 +67,28 @@ static void zb_task(void *arg)
     };
     esp_zb_init(&zb_nwk_cfg);
 
+    /* Basic cluster with manufacturer + model for z2m identification */
+    esp_zb_basic_cluster_cfg_t basic_cfg = { .power_source = 0x01 };
+    esp_zb_attribute_list_t *basic_attrs = esp_zb_basic_cluster_create(&basic_cfg);
+    static char manufacturer[] = {18, 'E', 'l', 'e', 'c', 't', 'r', 'o', 'n', 'i', 'c', 's', 'C', 'o', 'n', 's', 'u', 'l', 't'};
+    esp_zb_basic_cluster_add_attr(basic_attrs,
+        ESP_ZB_ZCL_ATTR_BASIC_MANUFACTURER_NAME_ID, manufacturer);
+    static char model[] = {14, 's', 'o', 'u', 'n', 'd', '-', 'l', 'e', 'v', 'e', 'l', '-', 'v', '1'};
+    esp_zb_basic_cluster_add_attr(basic_attrs,
+        ESP_ZB_ZCL_ATTR_BASIC_MODEL_IDENTIFIER_ID, model);
+
+    esp_zb_identify_cluster_cfg_t identify_cfg = { .identify_time = 0 };
+
     /* Analog Input cluster with present_value attribute */
     esp_zb_analog_input_cluster_cfg_t ai_cfg = {
         .present_value = 0.0f,
     };
     esp_zb_cluster_list_t *cluster_list = esp_zb_zcl_cluster_list_create();
+    esp_zb_cluster_list_add_basic_cluster(cluster_list, basic_attrs,
+        ESP_ZB_ZCL_CLUSTER_SERVER_ROLE);
+    esp_zb_cluster_list_add_identify_cluster(cluster_list,
+        esp_zb_identify_cluster_create(&identify_cfg),
+        ESP_ZB_ZCL_CLUSTER_SERVER_ROLE);
     esp_zb_cluster_list_add_analog_input_cluster(
         cluster_list,
         esp_zb_analog_input_cluster_create(&ai_cfg),
