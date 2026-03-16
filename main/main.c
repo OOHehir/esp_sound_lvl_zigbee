@@ -17,7 +17,7 @@ static const char *TAG = "main";
 #define MIC_SAMPLE_COUNT 1024
 
 #define SAMPLE_INTERVAL_S  1
-#define CHANGE_THRESHOLD   0.02f
+#define CHANGE_THRESHOLD   0.0005f
 
 #define ZB_RESET_GPIO      GPIO_NUM_22  /* Pull-down; HIGH on boot = factory reset */
 
@@ -25,7 +25,7 @@ static const char *TAG = "main";
 static void sound_task(void *arg)
 {
     float level = 0.0f;
-    float prev_level = -1.0f;
+    float prev_level = 0.0f;
     while (1) {
         if (i2s_mic_read_level(&level) == ESP_OK) {
             float delta = level - prev_level;

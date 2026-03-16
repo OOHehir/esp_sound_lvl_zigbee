@@ -10,6 +10,31 @@ static const char *TAG = "zigbee_sensor";
 #define ZB_ATTR_PRESENT_VALUE  0x0055
 
 static zigbee_sensor_config_t s_cfg = {0};
+static bool s_joined = false;
+
+/* ── Configure attribute reporting on the stack ────────────── */
+static void configure_reporting(void)
+{
+    esp_zb_zcl_reporting_info_t info = {
+        .direction   = ESP_ZB_ZCL_CMD_DIRECTION_TO_SRV,
+        .ep          = s_cfg.endpoint,
+        .cluster_id  = ZB_ANALOG_IN_CLUSTER,
+        .cluster_role = ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
+        .attr_id     = ZB_ATTR_PRESENT_VALUE,
+        .u.send_info = {
+            .min_interval     = 1,      /* don't report faster than 1 s  */
+            .max_interval     = 300,    /* report at least every 5 min   */
+            .def_min_interval = 1,
+            .def_max_interval = 300,
+            .delta.s32        = 0,      /* we handle change threshold in app */
+        },
+        .dst.profile_id = ESP_ZB_AF_HA_PROFILE_ID,
+        .manuf_code  = ESP_ZB_ZCL_ATTR_NON_MANUFACTURER_SPECIFIC,
+    };
+    esp_err_t err = esp_zb_zcl_update_reporting_info(&info);
+    ESP_LOGI(TAG, "Reporting configured for analog_input.present_value: %s",
+             esp_err_to_name(err));
+}
 
 /* ── Zigbee stack signal handler (extern, called by stack) ─── */
 void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
@@ -26,6 +51,7 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
         case ESP_ZB_BDB_SIGNAL_DEVICE_REBOOT:
             if (status == ESP_OK) {
                 ESP_LOGI(TAG, "Zigbee stack ready — joining network");
+                configure_reporting();
                 esp_zb_bdb_start_top_level_commissioning(ESP_ZB_BDB_MODE_NETWORK_STEERING);
             } else {
                 ESP_LOGW(TAG, "Zigbee init failed (status %d)", status);
@@ -34,6 +60,7 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
         case ESP_ZB_BDB_SIGNAL_STEERING:
             if (status == ESP_OK) {
                 ESP_LOGI(TAG, "Network joined successfully");
+                s_joined = true;
                 if (s_cfg.on_joined) {
                     s_cfg.on_joined();
                 }
@@ -122,13 +149,18 @@ esp_err_t zigbee_sensor_start(const zigbee_sensor_config_t *cfg)
 
 esp_err_t zigbee_sensor_set_level(float level)
 {
+    if (!s_joined) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
     esp_zb_lock_acquire(portMAX_DELAY);
+    /* notify=true triggers the stack's reporting mechanism from the ZB task context */
     esp_err_t err = esp_zb_zcl_set_attribute_val(
         s_cfg.endpoint,
         ZB_ANALOG_IN_CLUSTER,
         ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
         ZB_ATTR_PRESENT_VALUE,
-        &level, false);
+        &level, true);
     esp_zb_lock_release();
     return err;
 }
