@@ -8,6 +8,8 @@ Read SPH0645LM4H sound level via I2S on ESP32-C6 and report normalised RMS ampli
 ├── CMakeLists.txt
 ├── sdkconfig.defaults
 ├── partitions.csv                # Custom: zb_storage + zb_fct partitions
+├── firmware/
+│   └── sound_monitor.bin         # Pre-built binary for flashing
 ├── main/
 │   ├── CMakeLists.txt
 │   ├── idf_component.yml         # esp-zigbee-lib + esp-zboss-lib
@@ -51,7 +53,8 @@ stty -F /dev/ttyACM0 115200 raw -echo; timeout 30 cat /dev/ttyACM0
 - **Profile:** Home Automation (`0x0104`)
 - **Cluster:** Analog Input (`0x000C`), server role
 - **Attribute:** `present_value` (`0x0055`) — single-precision float, 0.0-1.0
-- **Report interval:** 5 seconds (configurable via `REPORT_INTERVAL_S` in `main.c`)
+- **Reporting:** Attribute reports sent on significant change (delta >= 0.0005 linear)
+- **Report config:** min_interval 1s, max_interval 300s (stack-managed via `esp_zb_zcl_update_reporting_info`)
 
 ## Signal Processing
 
